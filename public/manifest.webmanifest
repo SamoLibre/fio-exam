@@ -1,6 +1,6 @@
 {
-  "name": "OE Öğrenci Sınav Takip & Alarm",
-  "short_name": "OE Sınav",
+  "name": "FIO Exam - Öğrenci Sınav Takip & Alarm",
+  "short_name": "FIO Exam",
   "description": "Öğrencilerin IELTS, SAT, AP, TOEFL sınav takip ve alarm sistemi",
   "start_url": "/",
   "display": "standalone",

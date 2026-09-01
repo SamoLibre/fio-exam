@@ -1,4 +1,4 @@
-const CACHE_NAME = "oe-exam-tracker-v1";
+const CACHE_NAME = "fio-exam-v1";
 const ASSETS_TO_CACHE = [
   "/",
   "/manifest.webmanifest",
@@ -58,7 +58,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "OE Sınav Takip", body: "Yaklaşan bir sınavınız var!" };
+  let data = { title: "FIO Exam", body: "Yaklaşan bir sınavınız var!" };
   if (event.data) {
     try {
       data = event.data.json();

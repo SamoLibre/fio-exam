@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({ session, onLogout }) => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
-                OE Sınav Takip
+                FIO Exam
               </span>
               <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                 PWA

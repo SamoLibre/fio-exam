@@ -37,3 +37,4 @@ next-env.d.ts
 # temp scripts
 setup_*.js
 generate_icons.js
+.vercel

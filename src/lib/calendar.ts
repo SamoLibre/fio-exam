@@ -29,12 +29,12 @@ export function downloadIcsFile(exam: Exam): void {
   const endIso = `${year}${month}${day}T${endHourStr}${time.substring(2)}00`;
 
   const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const uid = `exam-${exam.id}-${Date.now()}@oe-exam-tracker.app`;
+  const uid = `exam-${exam.id}-${Date.now()}@fio-exam.app`;
 
   const icsContent = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//OE Exam Tracker//TR",
+    "PRODID:-//FIO Exam//TR",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

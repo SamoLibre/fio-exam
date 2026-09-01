@@ -1,8 +1,8 @@
 ﻿import { AppData, Exam, Student, UserSession } from "@/types";
 import { initialData } from "./initialData";
 
-const STORAGE_KEY = "oe_exam_tracker_data_v1";
-const SESSION_KEY = "oe_exam_tracker_session_v1";
+const STORAGE_KEY = "fio_exam_data_v1";
+const SESSION_KEY = "fio_exam_session_v1";
 
 // In-memory fallback if needed
 let globalMemoryData: AppData = { ...initialData };

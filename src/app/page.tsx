@@ -131,7 +131,7 @@ export default function LoginPage() {
             <GraduationCap className="h-8 w-8" />
           </div>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
-            OE Sınav Takip
+            FIO Exam
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
             IELTS • SAT • AP • TOEFL Sınav ve Alarm Sistemi

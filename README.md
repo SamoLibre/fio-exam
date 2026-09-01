@@ -1,6 +1,6 @@
-﻿# 🎓 OE Sınav Takip & Alarm PWA
+﻿# 🎓 FIO Exam - Öğrenci Sınav Takip & Alarm
 
-Öğretmenlerin öğrencilerinin **IELTS, SAT, AP, TOEFL, Duolingo** ve diğer sınavlarını kolayca takip edebileceği, sınav tarihleri yaklaştıkça alarmlar ve bildirimler üreten, öğrencilerin ise kendi özel portallarından sınav takvimlerini ve geri sayımlarını görebileceği modern bir **Progressive Web App (PWA)**.
+Öğretmenlerin öğrencilerinin **IELTS, SAT, AP, TFIOFL, Duolingo** ve diğer sınavlarını kolayca takip edebileceği, sınav tarihleri yaklaştıkça alarmlar ve bildirimler üreten, öğrencilerin ise kendi özel portallarından sınav takvimlerini ve geri sayımlarını görebileceği modern bir **Progressive Web App (PWA)**.
 
 ---
 
@@ -50,4 +50,4 @@ npm run build
 | **Öğretmen (Admin)** | `ogretmen` | `123456` | Tüm öğrencileri ve sınavları yönetir |
 | **Öğrenci** | `mira` | `123` | IELTS & AP Calculus BC öğrencisi |
 | **Öğrenci** | `bedirhan` | `123` | Digital SAT & AP Physics öğrencisi |
-| **Öğrenci** | `burak` | `123` | TOEFL iBT öğrencisi |
+| **Öğrenci** | `burak` | `123` | TFIOFL iBT öğrencisi |

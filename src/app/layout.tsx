@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OE Sınav Takip - IELTS, SAT, AP, TOEFL",
+  title: "FIO Exam - IELTS, SAT, AP, TOEFL",
   description: "Öğrencilerin sınav takibi ve yaklaşan sınav alarmları PWA uygulaması",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "OE Sınav",
+    title: "FIO Exam",
   },
 };
 
