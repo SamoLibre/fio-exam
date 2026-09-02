@@ -1,36 +1,46 @@
 ﻿import { NextResponse } from "next/server";
 import { AppData } from "@/types";
 
-const CLOUD_DB_ID = "ff808181a061cdc401a061f2bbd9007e";
-const CLOUD_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
+const GIST_ID = "7b8d5ae5f7e338c72523cc8437a0c3fc";
 
-// In-memory fallback
-let inMemoryData: AppData = {
-  students: [],
-  exams: [],
-};
+function getGithubToken(): string {
+  return process.env.GITHUB_DB_TOKEN ? process.env.GITHUB_DB_TOKEN.trim() : "";
+}
+
+let inMemoryCache: AppData | null = null;
 
 export async function GET() {
-  try {
-    const res = await fetch(CLOUD_URL, { cache: "no-store" });
-    if (res.ok) {
-      const json = await res.json();
-      if (json && json.data && Array.isArray(json.data.students)) {
-        inMemoryData = {
-          students: json.data.students || [],
-          exams: json.data.exams || [],
-        };
-        return NextResponse.json(inMemoryData);
+  const token = getGithubToken();
+  if (token) {
+    try {
+      const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        headers: {
+          Authorization: `token ${token}`,
+          "User-Agent": "FIO-Exam-App",
+          Accept: "application/vnd.github.v3+json",
+        },
+        cache: "no-store",
+      });
+
+      if (res.ok) {
+        const gist = await res.json();
+        const content = gist.files?.["fio_exam_db.json"]?.content;
+        if (content) {
+          const parsed: AppData = JSON.parse(content);
+          inMemoryCache = parsed;
+          return NextResponse.json(parsed);
+        }
       }
+    } catch (err) {
+      console.error("Gist DB read error:", err);
     }
-  } catch (err) {
-    console.error("Cloud DB read error:", err);
   }
 
-  return NextResponse.json(inMemoryData);
+  return NextResponse.json(inMemoryCache || { students: [], exams: [] });
 }
 
 export async function POST(req: Request) {
+  const token = getGithubToken();
   try {
     const body = await req.json();
     if (body && Array.isArray(body.students)) {
@@ -39,19 +49,32 @@ export async function POST(req: Request) {
         exams: body.exams || [],
       };
 
-      inMemoryData = payload;
+      inMemoryCache = payload;
 
-      // Sync to persistent Cloud DB
-      await fetch(CLOUD_URL, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "fio_exam_db",
-          data: payload,
-        }),
-      }).catch((e) => console.error("Cloud DB write error:", e));
+      if (token) {
+        // Persist to GitHub Gist
+        const patchRes = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `token ${token}`,
+            "User-Agent": "FIO-Exam-App",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            files: {
+              "fio_exam_db.json": {
+                content: JSON.stringify(payload, null, 2),
+              },
+            },
+          }),
+        });
 
-      return NextResponse.json({ success: true, data: inMemoryData });
+        if (!patchRes.ok) {
+          console.error("Gist DB write non-ok status:", patchRes.status);
+        }
+      }
+
+      return NextResponse.json({ success: true, data: payload });
     }
     return NextResponse.json({ error: "Geçersiz veri formatı" }, { status: 400 });
   } catch (error) {

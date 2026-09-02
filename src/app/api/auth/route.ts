@@ -1,8 +1,11 @@
 ﻿import { NextResponse } from "next/server";
 import { AppData, Student } from "@/types";
 
-const CLOUD_DB_ID = "ff808181a061cdc401a061f2bbd9007e";
-const CLOUD_URL = `https://api.restful-api.dev/objects/${CLOUD_DB_ID}`;
+const GIST_ID = "7b8d5ae5f7e338c72523cc8437a0c3fc";
+
+function getGithubToken(): string {
+  return process.env.GITHUB_DB_TOKEN ? process.env.GITHUB_DB_TOKEN.trim() : "";
+}
 
 export async function POST(req: Request) {
   try {
@@ -25,18 +28,31 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Student check from Cloud DB
+    // 2. Student check from Gist DB
+    const token = getGithubToken();
     let students: Student[] = [];
-    try {
-      const res = await fetch(CLOUD_URL, { cache: "no-store" });
-      if (res.ok) {
-        const json = await res.json();
-        if (json && json.data && Array.isArray(json.data.students)) {
-          students = json.data.students;
+    if (token) {
+      try {
+        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          headers: {
+            Authorization: `token ${token}`,
+            "User-Agent": "FIO-Exam-App",
+            Accept: "application/vnd.github.v3+json",
+          },
+          cache: "no-store",
+        });
+
+        if (res.ok) {
+          const gist = await res.json();
+          const content = gist.files?.["fio_exam_db.json"]?.content;
+          if (content) {
+            const parsed: AppData = JSON.parse(content);
+            students = parsed.students || [];
+          }
         }
+      } catch (err) {
+        console.error("Auth Gist DB fetch error:", err);
       }
-    } catch (err) {
-      console.error("Auth Cloud DB fetch error:", err);
     }
 
     const student = students.find(
