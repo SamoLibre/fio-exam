@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,10 +40,7 @@ export default function RootLayout({
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').then(
                     function(registration) {
-                      console.log('ServiceWorker registration successful:', registration.scope);
-                    },
-                    function(err) {
-                      console.log('ServiceWorker registration failed:', err);
+                      registration.update();
                     }
                   );
                 });

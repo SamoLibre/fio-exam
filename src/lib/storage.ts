@@ -1,10 +1,9 @@
-﻿import { AppData, Exam, Student, UserSession } from "@/types";
+﻿import { AppData, DEFAULT_CHECKLIST_ITEMS, Exam, Student, UserSession } from "@/types";
 import { initialData } from "./initialData";
 
-const STORAGE_KEY = "fio_exam_data_v1";
-const SESSION_KEY = "fio_exam_session_v1";
+const STORAGE_KEY = "fio_exam_data_v3";
+const SESSION_KEY = "fio_exam_session_v3";
 
-// In-memory fallback if needed
 let globalMemoryData: AppData = { ...initialData };
 
 export function getLocalData(): AppData {
@@ -14,10 +13,47 @@ export function getLocalData(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
+      // Check if old v1 or v2 exists and migrate, or use initialData
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
       return initialData;
     }
-    return JSON.parse(raw);
+    const parsed: AppData = JSON.parse(raw);
+
+    // Migration helper: ensure every student has applications and checklist
+    if (parsed.students && Array.isArray(parsed.students)) {
+      let needsSave = false;
+      parsed.students = parsed.students.map((student) => {
+        const initialMatch = initialData.students.find((s) => s.id === student.id);
+        
+        let apps = student.applications;
+        if (!apps || apps.length === 0) {
+          apps = initialMatch?.applications || [];
+          needsSave = true;
+        }
+
+        let chk = student.checklist;
+        if (!chk || chk.length === 0) {
+          chk = initialMatch?.checklist || DEFAULT_CHECKLIST_ITEMS.map((title, idx) => ({
+            id: `chk-mig-${idx}-${Date.now()}`,
+            title,
+            completed: false,
+          }));
+          needsSave = true;
+        }
+
+        return {
+          ...student,
+          applications: apps,
+          checklist: chk,
+        };
+      });
+
+      if (needsSave) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
+    }
+
+    return parsed;
   } catch {
     return initialData;
   }
@@ -38,7 +74,15 @@ export function getSession(): UserSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
+    if (!raw) {
+      // Check legacy session
+      const legacy = localStorage.getItem("fio_exam_session_v1") || localStorage.getItem("oe_exam_tracker_session_v1");
+      if (legacy) {
+        localStorage.setItem(SESSION_KEY, legacy);
+        return JSON.parse(legacy);
+      }
+      return null;
+    }
     return JSON.parse(raw);
   } catch {
     return null;
