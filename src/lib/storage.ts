@@ -1,4 +1,4 @@
-﻿import { AppData, DEFAULT_CHECKLIST_ITEMS, Exam, Student, UserSession } from "@/types";
+﻿import { AppData, Exam, Student, UserSession } from "@/types";
 import { initialData } from "./initialData";
 
 const STORAGE_KEY = "fio_exam_data_v5";
@@ -27,6 +27,12 @@ export function saveLocalData(data: AppData): void {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      // Background sync to server API
+      fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).catch(() => {});
     } catch (e) {
       console.error("Local storage save error:", e);
     }
