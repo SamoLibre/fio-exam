@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ChecklistItem, DEFAULT_CHECKLIST_ITEMS, Exam, Student, UniversityApplication, UserSession } from "@/types";
+import { formatTurkishDate } from "@/lib/storage";
 import { AddUniversityModal } from "./AddUniversityModal";
 import { 
   Building2, 
@@ -17,7 +18,8 @@ import {
   Award, 
   ArrowLeft,
   RotateCcw,
-  TrendingUp
+  TrendingUp,
+  Clock
 } from "lucide-react";
 
 interface StudentDetailViewProps {
@@ -312,7 +314,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
         </div>
 
         {/* ========================================================= */}
-        {/* 2. GİRECEĞİ SINAVLAR (Tarih ve Yer kaldırılmış sade görünüm) */}
+        {/* 2. GİRECEĞİ SINAVLAR (Sınav Tarihi ile birlikte) */}
         {/* ========================================================= */}
         <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col justify-between">
           <div>
@@ -367,6 +369,14 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                         {exam.type}
                       </span>
                     </div>
+
+                    {/* Sınav Tarihi */}
+                    {exam.examDate && (
+                      <div className="flex items-center gap-1.5 text-xs text-indigo-700 dark:text-indigo-300 font-semibold bg-indigo-50/60 dark:bg-indigo-950/40 px-2.5 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                        <Calendar className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span>📅 Sınav Tarihi: <strong>{formatTurkishDate(exam.examDate)}</strong> {exam.examTime ? `(${exam.examTime})` : ""}</span>
+                      </div>
+                    )}
 
                     {exam.targetScore && (
                       <div className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
@@ -534,7 +544,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                       className="text-zinc-400 hover:text-red-500 p-1 shrink-0"
                       title="Maddeyi Sil"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))
