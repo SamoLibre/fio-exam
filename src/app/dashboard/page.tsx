@@ -7,14 +7,12 @@ import {
   getLocalData, 
   saveLocalData, 
   getSession, 
-  saveSession, 
-  calculateDaysLeft 
+  saveSession 
 } from "@/lib/storage";
 import { checkAndSendExamAlarms, sendBrowserNotification } from "@/lib/notifications";
 import { Navbar } from "@/components/Navbar";
 import { CalendarView } from "@/components/CalendarView";
 import { StudentDetailView } from "@/components/StudentDetailView";
-import { ExamCard } from "@/components/ExamCard";
 import { AddExamModal } from "@/components/AddExamModal";
 import { AddStudentModal } from "@/components/AddStudentModal";
 import { AddMockScoreModal } from "@/components/AddMockScoreModal";
@@ -22,31 +20,16 @@ import {
   Plus, 
   UserPlus, 
   Users, 
-  Calendar as CalendarIcon, 
-  AlertTriangle, 
-  Search, 
   BellRing, 
-  BookOpen, 
-  GraduationCap, 
-  CheckSquare,
-  Building2,
   Sparkles,
-  LayoutGrid
+  Calendar as CalendarIcon
 } from "lucide-react";
 
 export default function TeacherDashboardPage() {
   const router = useRouter();
   const [session, setSession] = useState<UserSession | null>(null);
   const [data, setData] = useState<AppData | null>(null);
-
-  // Active view mode: "calendar" | "student_detail" | "all_exams"
-  const [activeTab, setActiveTab] = useState<"calendar" | "student_detail" | "all_exams">("calendar");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-
-  // Filters for all_exams tab
-  const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>("all");
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modals
   const [isAddExamOpen, setIsAddExamOpen] = useState(false);
@@ -132,7 +115,6 @@ export default function TeacherDashboardPage() {
     setData(newData);
     saveLocalData(newData);
     setSelectedStudentId(newStudent.id);
-    setActiveTab("student_detail");
   };
 
   const handleUpdateStudent = (updatedStudent: Student) => {
@@ -178,29 +160,6 @@ export default function TeacherDashboardPage() {
 
   const selectedStudent = data.students.find((s) => s.id === selectedStudentId) || data.students[0];
 
-  // Filter exams for all_exams tab
-  const filteredExams = data.exams.filter((exam) => {
-    if (selectedStudentFilter !== "all" && exam.studentId !== selectedStudentFilter) {
-      return false;
-    }
-    if (selectedTypeFilter !== "all" && exam.type !== selectedTypeFilter) {
-      return false;
-    }
-    if (searchQuery.trim() !== "") {
-      const q = searchQuery.toLowerCase();
-      return (
-        exam.title.toLowerCase().includes(q) ||
-        exam.studentName.toLowerCase().includes(q) ||
-        (exam.notes && exam.notes.toLowerCase().includes(q))
-      );
-    }
-    return true;
-  });
-
-  const sortedExams = [...filteredExams].sort(
-    (a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime()
-  );
-
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <Navbar session={session} onLogout={handleLogout} />
@@ -213,7 +172,7 @@ export default function TeacherDashboardPage() {
               Öğretmen Yönetim Paneli 🎓
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-              Sınav takvimi, öğrenci üniversite başvuruları, sınavlar ve kontrol listeleri.
+              Aylık sınav takvimi ve seçili öğrencinin üniversite, sınav ve checklist takibi.
             </p>
           </div>
 
@@ -248,49 +207,58 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-        {/* Quick Student Selector Bar */}
+        {/* 1. Sınav Takvimi (Aylık İnteraktif Görünüm) */}
+        <div>
+          <CalendarView
+            exams={data.exams}
+            students={data.students}
+            onSelectExam={(e) => {
+              setEditingExam(e);
+              setIsAddExamOpen(true);
+            }}
+          />
+        </div>
+
+        {/* Öğrenci Seçici Butonları */}
         <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
               <Users className="h-4 w-4 text-blue-600" />
-              Öğrenci Seçimi (3'lü Detay Görünümü İçin)
+              Öğrenci Seçin (Aşağıda Bilgileri Görüntülenir)
             </span>
             <span className="text-xs text-zinc-400">
-              {data.students.length} Kayıtlı Öğrenci
+              {data.students.length} Öğrenci
             </span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-1">
             {data.students.map((student) => {
-              const isSelected = selectedStudent?.id === student.id && activeTab === "student_detail";
+              const isSelected = selectedStudent?.id === student.id;
               const sExams = data.exams.filter((e) => e.studentId === student.id);
               const sApps = student.applications || [];
 
               return (
                 <button
                   key={student.id}
-                  onClick={() => {
-                    setSelectedStudentId(student.id);
-                    setActiveTab("student_detail");
-                  }}
-                  className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 transition shrink-0 ${
+                  onClick={() => setSelectedStudentId(student.id)}
+                  className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition shrink-0 ${
                     isSelected
-                      ? "border-blue-600 bg-blue-50/80 shadow-xs dark:border-blue-500 dark:bg-blue-950/50"
+                      ? "border-blue-600 bg-blue-50/90 shadow-sm ring-2 ring-blue-500/20 dark:border-blue-500 dark:bg-blue-950/60"
                       : "border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800/40"
                   }`}
                 >
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr ${
+                    className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr ${
                       student.avatarColor || "from-blue-600 to-indigo-600"
-                    } text-xs font-bold text-white shadow-xs`}
+                    } text-sm font-bold text-white shadow-xs`}
                   >
                     {student.name.substring(0, 1)}
                   </div>
                   <div className="text-left">
-                    <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                    <div className={`text-sm font-bold ${isSelected ? "text-blue-950 dark:text-white" : "text-zinc-900 dark:text-white"}`}>
                       {student.name}
                     </div>
-                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                       {sApps.length} Başvuru • {sExams.length} Sınav
                     </div>
                   </div>
@@ -300,68 +268,12 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
-          <button
-            onClick={() => setActiveTab("calendar")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
-              activeTab === "calendar"
-                ? "border-blue-600 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
-            }`}
-          >
-            <CalendarIcon className="h-4 w-4" />
-            <span>1. Sınav Takvimi (Aylık Görünüm)</span>
-          </button>
-
-          {selectedStudent && (
-            <button
-              onClick={() => setActiveTab("student_detail")}
-              className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
-                activeTab === "student_detail"
-                  ? "border-blue-600 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
-              }`}
-            >
-              <GraduationCap className="h-4 w-4" />
-              <span>2. {selectedStudent.name} (Üniversiteler • Sınavlar • Checklist)</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setActiveTab("all_exams")}
-            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
-              activeTab === "all_exams"
-                ? "border-blue-600 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span>3. Tüm Sınav Listesi ({data.exams.length})</span>
-          </button>
-        </div>
-
-        {/* TAB 1: CALENDAR VIEW */}
-        {activeTab === "calendar" && (
-          <div className="space-y-6">
-            <CalendarView
-              exams={data.exams}
-              students={data.students}
-              onSelectExam={(e) => {
-                setEditingExam(e);
-                setIsAddExamOpen(true);
-              }}
-            />
-          </div>
-        )}
-
-        {/* TAB 2: STUDENT DETAIL VIEW (3 SADE BİLGİ: 1- Üniversiteler, 2- Sınavlar, 3- Checklist) */}
-        {activeTab === "student_detail" && selectedStudent && (
+        {/* 2. Seçili Öğrencinin Sadeleştirilmiş 3'lü Görünümü: 1- Üniversiteler, 2- Sınavlar, 3- Checklist */}
+        {selectedStudent && (
           <StudentDetailView
             student={selectedStudent}
             exams={data.exams}
             session={session}
-            onBack={() => setActiveTab("calendar")}
             onAddExam={() => {
               setEditingExam(null);
               setIsAddExamOpen(true);
@@ -378,83 +290,6 @@ export default function TeacherDashboardPage() {
             }}
             onUpdateStudent={handleUpdateStudent}
           />
-        )}
-
-        {/* TAB 3: ALL EXAMS LIST */}
-        {activeTab === "all_exams" && (
-          <div className="space-y-4">
-            {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Öğrenci adı veya sınav ara..."
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-9 pr-3 py-2 text-xs sm:text-sm text-zinc-900 focus:border-blue-500 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedStudentFilter}
-                  onChange={(e) => setSelectedStudentFilter(e.target.value)}
-                  className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                >
-                  <option value="all">Tüm Öğrenciler ({data.students.length})</option>
-                  {data.students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedTypeFilter}
-                  onChange={(e) => setSelectedTypeFilter(e.target.value)}
-                  className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-                >
-                  <option value="all">Tüm Sınav Türleri</option>
-                  <option value="IELTS">IELTS</option>
-                  <option value="SAT">SAT</option>
-                  <option value="AP">AP</option>
-                  <option value="TOEFL">TOEFL</option>
-                  <option value="DUOLINGO">Duolingo</option>
-                  <option value="DİĞER">Diğer</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Exam Cards Grid */}
-            {sortedExams.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-zinc-300 p-12 text-center dark:border-zinc-700">
-                <BookOpen className="mx-auto h-12 w-12 text-zinc-400" />
-                <h3 className="mt-3 text-base font-semibold text-zinc-900 dark:text-white">
-                  Kriterlere uygun sınav bulunamadı
-                </h3>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {sortedExams.map((exam) => (
-                  <ExamCard
-                    key={exam.id}
-                    exam={exam}
-                    session={session}
-                    onEdit={(e) => {
-                      setEditingExam(e);
-                      setIsAddExamOpen(true);
-                    }}
-                    onDelete={handleDeleteExam}
-                    onAddMock={(examId) => {
-                      setSelectedExamForMock({ id: examId, title: exam.title });
-                      setIsAddMockOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
         )}
       </main>
 
