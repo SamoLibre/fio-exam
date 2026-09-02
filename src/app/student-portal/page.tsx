@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppData, Exam, Student, UserSession } from "@/types";
 import { 
   getLocalData, 
+  saveLocalData, 
   getSession, 
   saveSession, 
   calculateDaysLeft, 
@@ -13,19 +14,16 @@ import {
 import { checkAndSendExamAlarms } from "@/lib/notifications";
 import { createGoogleCalendarUrl, downloadIcsFile } from "@/lib/calendar";
 import { Navbar } from "@/components/Navbar";
-import { ExamCard } from "@/components/ExamCard";
+import { CalendarView } from "@/components/CalendarView";
+import { StudentDetailView } from "@/components/StudentDetailView";
 import { 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Clock, 
   Target, 
-  CheckCircle2, 
-  AlertCircle, 
   Sparkles, 
-  BookOpen, 
   Download, 
   CalendarPlus, 
-  Award,
-  ChevronRight
+  GraduationCap
 } from "lucide-react";
 
 export default function StudentPortalPage() {
@@ -33,6 +31,8 @@ export default function StudentPortalPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [data, setData] = useState<AppData | null>(null);
   const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
+  const [activeTab, setActiveTab] = useState<"detail" | "calendar">("detail");
+
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
     days: 0,
     hours: 0,
@@ -67,7 +67,6 @@ export default function StudentPortalPage() {
     (e) => e.studentId === currentStudent?.id || e.studentName.toLowerCase().includes(session?.name.toLowerCase() || "")
   ) || [];
 
-  // Sort exams by date
   const sortedExams = [...studentExams].sort(
     (a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime()
   );
@@ -102,7 +101,18 @@ export default function StudentPortalPage() {
     router.push("/");
   };
 
-  if (!session || !data) {
+  const handleUpdateStudent = (updatedStudent: Student) => {
+    if (!data) return;
+    const updatedStudents = data.students.map((s) =>
+      s.id === updatedStudent.id ? updatedStudent : s
+    );
+    const newData: AppData = { ...data, students: updatedStudents };
+    setData(newData);
+    saveLocalData(newData);
+    setCurrentStudent(updatedStudent);
+  };
+
+  if (!session || !data || !currentStudent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
@@ -114,8 +124,8 @@ export default function StudentPortalPage() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <Navbar session={session} onLogout={handleLogout} />
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-        {/* Welcome & Profile Header */}
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+        {/* Welcome & Next Exam Countdown */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-800 p-6 sm:p-8 text-white shadow-xl">
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md">
@@ -124,11 +134,11 @@ export default function StudentPortalPage() {
             </div>
             
             <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Hoş Geldin, {currentStudent?.name || session.name}! 👋
+              Hoş Geldin, {currentStudent.name}! 👋
             </h1>
             
             <p className="mt-1 text-sm text-blue-100 max-w-xl">
-              {currentStudent?.targetUniversity ? (
+              {currentStudent.targetUniversity ? (
                 <>Hedef: <strong>{currentStudent.targetUniversity}</strong> ({currentStudent.targetMajor || "Lisans"})</>
               ) : (
                 "Sınavların ve hazırlık sürecin öğretmeniniz tarafından takip ediliyor."
@@ -173,7 +183,6 @@ export default function StudentPortalPage() {
                   </div>
                 </div>
 
-                {/* Quick 1-click alarm download for next exam */}
                 <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-white/10">
                   <a
                     href={createGoogleCalendarUrl(nextExam)}
@@ -197,62 +206,50 @@ export default function StudentPortalPage() {
           </div>
         </div>
 
-        {/* My Exams List */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                Sınav Takvimim ({studentExams.length})
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Öğretmeninizin sizin için planladığı sınavlar ve hedefler.
-              </p>
-            </div>
-          </div>
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
+          <button
+            onClick={() => setActiveTab("detail")}
+            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
+              activeTab === "detail"
+                ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
+            }`}
+          >
+            <GraduationCap className="h-4 w-4" />
+            <span>Başvurularım • Sınavlarım • Checklist</span>
+          </button>
 
-          {studentExams.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-              <BookOpen className="mx-auto h-10 w-10 text-zinc-400" />
-              <h3 className="mt-2 text-sm font-semibold text-zinc-900 dark:text-white">
-                Henüz kayıtlı bir sınavınız yok
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Öğretmeniniz sınav takviminizi eklediğinde burada görünecektir.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {sortedExams.map((exam) => (
-                <ExamCard key={exam.id} exam={exam} session={session} />
-              ))}
-            </div>
-          )}
+          <button
+            onClick={() => setActiveTab("calendar")}
+            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
+              activeTab === "calendar"
+                ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
+            }`}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            <span>Sınav Takvimim (Aylık)</span>
+          </button>
         </div>
 
-        {/* Study Advice & Checklist */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* Teacher Notes */}
-          {currentStudent?.notes && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
-              <h3 className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2 text-sm">
-                📌 Öğretmeninizin Notları
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-amber-800 dark:text-amber-200">
-                {currentStudent.notes}
-              </p>
-            </div>
-          )}
+        {/* TAB 1: 3-SECTION DETAIL VIEW */}
+        {activeTab === "detail" && (
+          <StudentDetailView
+            student={currentStudent}
+            exams={studentExams}
+            session={session}
+            onUpdateStudent={handleUpdateStudent}
+          />
+        )}
 
-          {/* Tips for PWA */}
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-5 dark:border-blue-900/40 dark:bg-blue-950/20">
-            <h3 className="font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2 text-sm">
-              📲 Telefonunuza Ekleyin
-            </h3>
-            <p className="mt-2 text-xs leading-relaxed text-blue-800 dark:text-blue-200">
-              Bu sayfayı telefonunuzda açıp tarayıcı menüsünden <strong>"Ana Ekrana Ekle"</strong> diyerek uygulama gibi kullanabilirsiniz. Ayrıca bildirimleri açarak sınav hatırlatıcılarını anında alabilirsiniz.
-            </p>
-          </div>
-        </div>
+        {/* TAB 2: CALENDAR VIEW */}
+        {activeTab === "calendar" && (
+          <CalendarView
+            exams={studentExams}
+            isStudentPortal={true}
+          />
+        )}
       </main>
     </div>
   );

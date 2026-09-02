@@ -38,6 +38,25 @@ export interface Exam {
   updatedAt: string;
 }
 
+export interface UniversityApplication {
+  id: string;
+  universityName: string;
+  program?: string;
+  country?: string;
+  status: 'hazirlaniyor' | 'basvuruldu' | 'kabul' | 'red' | 'beklemede';
+  deadline?: string; // YYYY-MM-DD
+  portalLink?: string;
+  notes?: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  dueDate?: string;
+  category?: string;
+}
+
 export interface Student {
   id: string;
   name: string;
@@ -48,6 +67,8 @@ export interface Student {
   targetMajor?: string;
   phone?: string;
   notes?: string;
+  applications?: UniversityApplication[];
+  checklist?: ChecklistItem[];
   createdAt: string;
 }
 

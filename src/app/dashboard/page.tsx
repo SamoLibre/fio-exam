@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppData, Exam, ExamType, MockScore, Student, UserSession } from "@/types";
+import { AppData, Exam, MockScore, Student, UserSession } from "@/types";
 import { 
   getLocalData, 
   saveLocalData, 
@@ -12,6 +12,8 @@ import {
 } from "@/lib/storage";
 import { checkAndSendExamAlarms, sendBrowserNotification } from "@/lib/notifications";
 import { Navbar } from "@/components/Navbar";
+import { CalendarView } from "@/components/CalendarView";
+import { StudentDetailView } from "@/components/StudentDetailView";
 import { ExamCard } from "@/components/ExamCard";
 import { AddExamModal } from "@/components/AddExamModal";
 import { AddStudentModal } from "@/components/AddStudentModal";
@@ -20,18 +22,16 @@ import {
   Plus, 
   UserPlus, 
   Users, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   AlertTriangle, 
-  CheckCircle2, 
   Search, 
-  Filter, 
   BellRing, 
   BookOpen, 
   GraduationCap, 
-  Phone, 
+  CheckSquare,
+  Building2,
   Sparkles,
-  Award,
-  Clock
+  LayoutGrid
 } from "lucide-react";
 
 export default function TeacherDashboardPage() {
@@ -39,11 +39,14 @@ export default function TeacherDashboardPage() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [data, setData] = useState<AppData | null>(null);
 
-  // Filters & State
+  // Active view mode: "calendar" | "student_detail" | "all_exams"
+  const [activeTab, setActiveTab] = useState<"calendar" | "student_detail" | "all_exams">("calendar");
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+
+  // Filters for all_exams tab
   const [selectedStudentFilter, setSelectedStudentFilter] = useState<string>("all");
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"exams" | "students">("exams");
 
   // Modals
   const [isAddExamOpen, setIsAddExamOpen] = useState(false);
@@ -62,6 +65,9 @@ export default function TeacherDashboardPage() {
 
     const localData = getLocalData();
     setData(localData);
+    if (localData.students.length > 0) {
+      setSelectedStudentId(localData.students[0].id);
+    }
 
     // Run alarm checker
     checkAndSendExamAlarms(localData.exams);
@@ -85,7 +91,7 @@ export default function TeacherDashboardPage() {
       // Add new
       const newExam: Exam = {
         id: `exam-${Date.now()}`,
-        studentId: examData.studentId || "",
+        studentId: examData.studentId || selectedStudentId || data.students[0]?.id || "",
         studentName: examData.studentName || "Öğrenci",
         title: examData.title || "Sınav",
         type: examData.type || "IELTS",
@@ -125,6 +131,18 @@ export default function TeacherDashboardPage() {
     const newData: AppData = { ...data, students: updatedStudents };
     setData(newData);
     saveLocalData(newData);
+    setSelectedStudentId(newStudent.id);
+    setActiveTab("student_detail");
+  };
+
+  const handleUpdateStudent = (updatedStudent: Student) => {
+    if (!data) return;
+    const updatedStudents = data.students.map((s) =>
+      s.id === updatedStudent.id ? updatedStudent : s
+    );
+    const newData: AppData = { ...data, students: updatedStudents };
+    setData(newData);
+    saveLocalData(newData);
   };
 
   const handleAddMockScore = (mock: MockScore) => {
@@ -145,7 +163,7 @@ export default function TeacherDashboardPage() {
   };
 
   const handleTestAlarms = () => {
-    sendBrowserNotification("🔔 Alarm Testi: Sınav Takip Sistemi", {
+    sendBrowserNotification("🔔 Alarm Testi: FIO Exam", {
       body: "Tüm sınavların yaklaşma alarmları aktif! Öğrenci sınav tarihlerine göre otomatik bildirim gönderilecektir.",
     });
   };
@@ -158,7 +176,9 @@ export default function TeacherDashboardPage() {
     );
   }
 
-  // Filter exams
+  const selectedStudent = data.students.find((s) => s.id === selectedStudentId) || data.students[0];
+
+  // Filter exams for all_exams tab
   const filteredExams = data.exams.filter((exam) => {
     if (selectedStudentFilter !== "all" && exam.studentId !== selectedStudentFilter) {
       return false;
@@ -177,18 +197,9 @@ export default function TeacherDashboardPage() {
     return true;
   });
 
-  // Sort upcoming first
   const sortedExams = [...filteredExams].sort(
     (a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime()
   );
-
-  // Metrics
-  const totalStudents = data.students.length;
-  const upcomingExams = data.exams.filter((e) => calculateDaysLeft(e.examDate) >= 0).length;
-  const urgentExams = data.exams.filter((e) => {
-    const days = calculateDaysLeft(e.examDate);
-    return days >= 0 && days <= 7;
-  }).length;
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
@@ -202,7 +213,7 @@ export default function TeacherDashboardPage() {
               Öğretmen Yönetim Paneli 🎓
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-              Öğrencilerin IELTS, SAT, AP ve TOEFL sınavlarını yönetin, tarihler ekleyin ve alarmları takip edin.
+              Sınav takvimi, öğrenci üniversite başvuruları, sınavlar ve kontrol listeleri.
             </p>
           </div>
 
@@ -237,86 +248,143 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase text-zinc-500">Öğrenci Sayısı</span>
+        {/* Quick Student Selector Bar */}
+        <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
               <Users className="h-4 w-4 text-blue-600" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-zinc-900 dark:text-white">
-              {totalStudents}
-            </div>
-            <div className="text-[11px] text-zinc-400">Takip edilen öğrenci</div>
+              Öğrenci Seçimi (3'lü Detay Görünümü İçin)
+            </span>
+            <span className="text-xs text-zinc-400">
+              {data.students.length} Kayıtlı Öğrenci
+            </span>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase text-zinc-500">Yaklaşan Sınavlar</span>
-              <Calendar className="h-4 w-4 text-indigo-600" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-zinc-900 dark:text-white">
-              {upcomingExams}
-            </div>
-            <div className="text-[11px] text-zinc-400">Planlanmış aktif sınav</div>
-          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {data.students.map((student) => {
+              const isSelected = selectedStudent?.id === student.id && activeTab === "student_detail";
+              const sExams = data.exams.filter((e) => e.studentId === student.id);
+              const sApps = student.applications || [];
 
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900/50 dark:bg-amber-950/20 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">Acil Alarmlar</span>
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-amber-600">
-              {urgentExams}
-            </div>
-            <div className="text-[11px] text-amber-700/80 dark:text-amber-400">Son 7 gün içinde</div>
-          </div>
-
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase text-zinc-500">Toplam Kayıt</span>
-              <BookOpen className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div className="mt-2 text-2xl font-black text-zinc-900 dark:text-white">
-              {data.exams.length}
-            </div>
-            <div className="text-[11px] text-zinc-400">Tüm sınavlar</div>
+              return (
+                <button
+                  key={student.id}
+                  onClick={() => {
+                    setSelectedStudentId(student.id);
+                    setActiveTab("student_detail");
+                  }}
+                  className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 transition shrink-0 ${
+                    isSelected
+                      ? "border-blue-600 bg-blue-50/80 shadow-xs dark:border-blue-500 dark:bg-blue-950/50"
+                      : "border-zinc-200 bg-zinc-50/60 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-800/40"
+                  }`}
+                >
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr ${
+                      student.avatarColor || "from-blue-600 to-indigo-600"
+                    } text-xs font-bold text-white shadow-xs`}
+                  >
+                    {student.name.substring(0, 1)}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                      {student.name}
+                    </div>
+                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      {sApps.length} Başvuru • {sExams.length} Sınav
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Tab Selection */}
+        {/* View Switcher Tabs */}
         <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800">
           <button
-            onClick={() => setActiveTab("exams")}
+            onClick={() => setActiveTab("calendar")}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
-              activeTab === "exams"
+              activeTab === "calendar"
                 ? "border-blue-600 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
             }`}
           >
-            <Calendar className="h-4 w-4" />
-            <span>Sınav Takvimi & Alarmlar ({data.exams.length})</span>
+            <CalendarIcon className="h-4 w-4" />
+            <span>1. Sınav Takvimi (Aylık Görünüm)</span>
           </button>
 
+          {selectedStudent && (
+            <button
+              onClick={() => setActiveTab("student_detail")}
+              className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
+                activeTab === "student_detail"
+                  ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                  : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
+              }`}
+            >
+              <GraduationCap className="h-4 w-4" />
+              <span>2. {selectedStudent.name} (Üniversiteler • Sınavlar • Checklist)</span>
+            </button>
+          )}
+
           <button
-            onClick={() => setActiveTab("students")}
+            onClick={() => setActiveTab("all_exams")}
             className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition ${
-              activeTab === "students"
+              activeTab === "all_exams"
                 ? "border-blue-600 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
             }`}
           >
-            <Users className="h-4 w-4" />
-            <span>Öğrenci Listesi ({data.students.length})</span>
+            <LayoutGrid className="h-4 w-4" />
+            <span>3. Tüm Sınav Listesi ({data.exams.length})</span>
           </button>
         </div>
 
-        {/* Tab 1: Exams View */}
-        {activeTab === "exams" && (
+        {/* TAB 1: CALENDAR VIEW */}
+        {activeTab === "calendar" && (
+          <div className="space-y-6">
+            <CalendarView
+              exams={data.exams}
+              students={data.students}
+              onSelectExam={(e) => {
+                setEditingExam(e);
+                setIsAddExamOpen(true);
+              }}
+            />
+          </div>
+        )}
+
+        {/* TAB 2: STUDENT DETAIL VIEW (3 SADE BİLGİ: 1- Üniversiteler, 2- Sınavlar, 3- Checklist) */}
+        {activeTab === "student_detail" && selectedStudent && (
+          <StudentDetailView
+            student={selectedStudent}
+            exams={data.exams}
+            session={session}
+            onBack={() => setActiveTab("calendar")}
+            onAddExam={() => {
+              setEditingExam(null);
+              setIsAddExamOpen(true);
+            }}
+            onEditExam={(e) => {
+              setEditingExam(e);
+              setIsAddExamOpen(true);
+            }}
+            onDeleteExam={handleDeleteExam}
+            onAddMock={(examId) => {
+              const ex = data.exams.find((e) => e.id === examId);
+              setSelectedExamForMock({ id: examId, title: ex?.title || "Sınav" });
+              setIsAddMockOpen(true);
+            }}
+            onUpdateStudent={handleUpdateStudent}
+          />
+        )}
+
+        {/* TAB 3: ALL EXAMS LIST */}
+        {activeTab === "all_exams" && (
           <div className="space-y-4">
             {/* Filter Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl bg-white p-4 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-              {/* Search */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                 <input
@@ -328,7 +396,6 @@ export default function TeacherDashboardPage() {
                 />
               </div>
 
-              {/* Student Filter */}
               <div className="flex items-center gap-2">
                 <select
                   value={selectedStudentFilter}
@@ -343,7 +410,6 @@ export default function TeacherDashboardPage() {
                   ))}
                 </select>
 
-                {/* Exam Type Filter */}
                 <select
                   value={selectedTypeFilter}
                   onChange={(e) => setSelectedTypeFilter(e.target.value)}
@@ -367,9 +433,6 @@ export default function TeacherDashboardPage() {
                 <h3 className="mt-3 text-base font-semibold text-zinc-900 dark:text-white">
                   Kriterlere uygun sınav bulunamadı
                 </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  Yukarıdaki "Sınav / Alarm Ekle" butonuna tıklayarak yeni bir sınav oluşturabilirsiniz.
-                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -391,81 +454,6 @@ export default function TeacherDashboardPage() {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Tab 2: Students View */}
-        {activeTab === "students" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {data.students.map((student) => {
-                const sExams = data.exams.filter((e) => e.studentId === student.id);
-                return (
-                  <div
-                    key={student.id}
-                    className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs transition hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr ${student.avatarColor || "from-blue-500 to-indigo-500"} text-lg font-bold text-white shadow-sm`}>
-                        {student.name.substring(0, 1)}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-zinc-900 dark:text-white">
-                          {student.name}
-                        </h3>
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-                          <span>Kullanıcı: <strong>{student.username}</strong></span>
-                          <span>•</span>
-                          <span>Şifre: <strong>{student.password || "123"}</strong></span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
-                      {student.targetUniversity && (
-                        <div className="flex items-center gap-1.5">
-                          <GraduationCap className="h-4 w-4 text-blue-600 shrink-0" />
-                          <span className="font-medium">{student.targetUniversity} ({student.targetMajor || "Lisans"})</span>
-                        </div>
-                      )}
-                      {student.phone && (
-                        <div className="flex items-center gap-1.5">
-                          <Phone className="h-4 w-4 text-emerald-600 shrink-0" />
-                          <span>{student.phone}</span>
-                        </div>
-                      )}
-                      {student.notes && (
-                        <div className="rounded-lg bg-zinc-50 p-2 text-[11px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                          {student.notes}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Sınavlar Listesi */}
-                    <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                      <div className="flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                        <span>Kayıtlı Sınavlar ({sExams.length})</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        {sExams.map((e) => (
-                          <div
-                            key={e.id}
-                            className="flex items-center justify-between rounded-lg bg-zinc-50 px-2.5 py-1.5 text-xs dark:bg-zinc-800/60"
-                          >
-                            <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                              {e.title}
-                            </span>
-                            <span className="text-[11px] text-blue-600 font-semibold">
-                              {e.examDate}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
       </main>
