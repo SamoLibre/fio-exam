@@ -1,4 +1,12 @@
-﻿import { AppData } from "@/types";
+﻿import { AppData, DEFAULT_CHECKLIST_ITEMS } from "@/types";
+
+const createDefaultChecklist = (completedIndices: number[]) => {
+  return DEFAULT_CHECKLIST_ITEMS.map((item, idx) => ({
+    id: `chk-def-${idx}-${Date.now()}`,
+    title: item,
+    completed: completedIndices.includes(idx),
+  }));
+};
 
 export const initialData: AppData = {
   students: [
@@ -11,7 +19,6 @@ export const initialData: AppData = {
       targetUniversity: "Oxford / Imperial College",
       targetMajor: "Biomedical Engineering",
       phone: "+90 555 123 45 67",
-      notes: "IELTS Writing ve Speaking odaklı çalışıyor. Hedef genel 7.5+",
       applications: [
         {
           id: "app-1",
@@ -20,7 +27,6 @@ export const initialData: AppData = {
           country: "İngiltere 🇬🇧",
           status: "hazirlaniyor",
           deadline: "2026-10-15",
-          notes: "UCAS başvurusu üzerinden gönderilecek. Referans mektubu bekleniyor.",
         },
         {
           id: "app-2",
@@ -29,7 +35,6 @@ export const initialData: AppData = {
           country: "İngiltere 🇬🇧",
           status: "hazirlaniyor",
           deadline: "2027-01-15",
-          notes: "Personal statement 2. taslak kontrol edilecek.",
         },
         {
           id: "app-3",
@@ -38,16 +43,9 @@ export const initialData: AppData = {
           country: "Belçika 🇧🇪",
           status: "beklemede",
           deadline: "2027-03-01",
-          notes: "Alternatif Avrupa seçeneği.",
         },
       ],
-      checklist: [
-        { id: "chk-1", title: "IELTS Writing Task 2 Şablonlarını bitir", completed: true, dueDate: "2026-09-15" },
-        { id: "chk-2", title: "UCAS Personal Statement ilk taslağını hocaya ilet", completed: true, dueDate: "2026-09-20" },
-        { id: "chk-3", title: "Pasaport geçerlilik tarihini kontrol et (en az 6 ay)", completed: false, dueDate: "2026-10-01" },
-        { id: "chk-4", title: "AP Calculus BC Series & Sequences konu tekrarı", completed: false, dueDate: "2026-10-10" },
-        { id: "chk-5", title: "Lise İngilizce öğretmeninden 2. referans mektubunu al", completed: false, dueDate: "2026-10-12" },
-      ],
+      checklist: createDefaultChecklist([0, 1, 2, 3, 6]), // Passport, Diploma, Transcript, English Proficiency, Motivation Letter
       createdAt: "2026-08-15T10:00:00.000Z",
     },
     {
@@ -59,7 +57,6 @@ export const initialData: AppData = {
       targetUniversity: "TU Munich / ETH Zurich",
       targetMajor: "Computer Science",
       phone: "+90 555 234 56 78",
-      notes: "SAT Math 780+ hedefliyor, AP Physics 1 denemeleri iyi gidiyor.",
       applications: [
         {
           id: "app-4",
@@ -68,7 +65,6 @@ export const initialData: AppData = {
           country: "Almanya 🇩🇪",
           status: "hazirlaniyor",
           deadline: "2027-05-31",
-          notes: "VPD (Uni-Assist) süreci başlatılacak.",
         },
         {
           id: "app-5",
@@ -77,7 +73,6 @@ export const initialData: AppData = {
           country: "İsviçre 🇨🇭",
           status: "hazirlaniyor",
           deadline: "2027-04-30",
-          notes: "C1 Almanca veya yüksek SAT + AP skoru gerekli.",
         },
         {
           id: "app-6",
@@ -86,15 +81,9 @@ export const initialData: AppData = {
           country: "Hollanda 🇳🇱",
           status: "beklemede",
           deadline: "2027-01-15",
-          notes: "Numerus Fixus seçme sınavı takvimi incelenecek.",
         },
       ],
-      checklist: [
-        { id: "chk-6", title: "Digital SAT Bluebook Test 4 denemesini çöz", completed: true, dueDate: "2026-09-10" },
-        { id: "chk-7", title: "AP Physics 1 Rotational Motion soru bankası bitir", completed: false, dueDate: "2026-10-05" },
-        { id: "chk-8", title: "TUM için Uni-Assist hesap açılışı ve evrak yükleme", completed: false, dueDate: "2026-11-01" },
-        { id: "chk-9", title: "Not dökümü (Transkript) apostil onayını al", completed: false, dueDate: "2026-11-15" },
-      ],
+      checklist: createDefaultChecklist([0, 1, 2, 4, 8, 11]), // Passport, Diploma, Transcript, SAT, CV, Extra Curricular
       createdAt: "2026-08-16T11:30:00.000Z",
     },
     {
@@ -106,7 +95,6 @@ export const initialData: AppData = {
       targetUniversity: "University of Toronto",
       targetMajor: "Economics / Data Science",
       phone: "+90 555 345 67 89",
-      notes: "TOEFL Reading & Listening 28+ seviyesinde. Speaking pratikleri yapılacak.",
       applications: [
         {
           id: "app-7",
@@ -115,7 +103,6 @@ export const initialData: AppData = {
           country: "Kanada 🇨🇦",
           status: "hazirlaniyor",
           deadline: "2027-01-12",
-          notes: "OUAC 105 portalı üzerinden başvuru yapılacak.",
         },
         {
           id: "app-8",
@@ -124,14 +111,9 @@ export const initialData: AppData = {
           country: "İtalya 🇮🇹",
           status: "beklemede",
           deadline: "2027-02-05",
-          notes: "Early session başvurusu için SAT/Bocconi test skoru girilecek.",
         },
       ],
-      checklist: [
-        { id: "chk-10", title: "TOEFL Speaking 15 saniye hazırlık kalıplarını ezberle", completed: true, dueDate: "2026-09-18" },
-        { id: "chk-11", title: "Toronto OUAC hesabı oluştur ve program kodlarını seç", completed: false, dueDate: "2026-10-15" },
-        { id: "chk-12", title: "Finansal yeterlilik ve sponsorluk evraklarını hazırla", completed: false, dueDate: "2026-11-20" },
-      ],
+      checklist: createDefaultChecklist([0, 1, 2, 3, 7]), // Passport, Diploma, Transcript, English Proficiency, Recommendation Letter
       createdAt: "2026-08-17T09:15:00.000Z",
     },
   ],
@@ -149,7 +131,6 @@ export const initialData: AppData = {
       targetScore: "7.5 (L:8, R:8, W:7, S:7)",
       currentScore: "",
       registrationStatus: "registered",
-      notes: "Writing Task 2 essay şablonları tekrar edilecek. Pasaport unutulmamalı.",
       alarms: [30, 14, 7, 3, 1, 0],
       mockScores: [
         { id: "mock-1", date: "2026-08-20", score: "6.5", note: "İlk genel deneme" },
@@ -171,7 +152,6 @@ export const initialData: AppData = {
       targetScore: "5",
       currentScore: "",
       registrationStatus: "planned",
-      notes: "Series & Taylor Polynomials konularına ağırlık verilecek.",
       alarms: [60, 30, 14, 7, 1],
       mockScores: [],
       createdAt: "2026-08-22T10:00:00.000Z",
@@ -190,7 +170,6 @@ export const initialData: AppData = {
       targetScore: "1520+ (Math: 790, ERW: 730)",
       currentScore: "",
       registrationStatus: "registered",
-      notes: "Bluebook deneme 4 ve 5 çözülecek. Desmos calculator pratikleri yapıldı.",
       alarms: [30, 14, 7, 3, 1, 0],
       mockScores: [
         { id: "mock-3", date: "2026-08-15", score: "1420", note: "Bluebook Test 1" },
@@ -212,7 +191,6 @@ export const initialData: AppData = {
       targetScore: "5",
       currentScore: "",
       registrationStatus: "planned",
-      notes: "Rotational dynamics ve harmonic motion soruları çözülecek.",
       alarms: [60, 30, 14, 7, 1],
       mockScores: [],
       createdAt: "2026-08-20T11:00:00.000Z",
@@ -231,7 +209,6 @@ export const initialData: AppData = {
       targetScore: "105+ (R:28, L:28, S:24, W:25)",
       currentScore: "",
       registrationStatus: "registered",
-      notes: "Speaking section için zaman yönetimi çalışılacak.",
       alarms: [30, 14, 7, 3, 1, 0],
       mockScores: [
         { id: "mock-5", date: "2026-08-18", score: "98", note: "Genel deneme" },

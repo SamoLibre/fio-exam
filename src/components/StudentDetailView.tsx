@@ -1,11 +1,9 @@
 ﻿"use client";
 
 import React, { useState } from "react";
-import { ChecklistItem, Exam, Student, UniversityApplication, UserSession } from "@/types";
-import { ExamCard } from "./ExamCard";
+import { ChecklistItem, DEFAULT_CHECKLIST_ITEMS, Exam, Student, UniversityApplication, UserSession } from "@/types";
 import { AddUniversityModal } from "./AddUniversityModal";
 import { 
-  GraduationCap, 
   Building2, 
   Calendar, 
   CheckSquare, 
@@ -13,14 +11,13 @@ import {
   Trash2, 
   CheckCircle2, 
   Circle, 
-  Clock, 
-  MapPin, 
-  FileText, 
-  ChevronRight, 
-  Award,
-  BookOpen,
+  Target, 
+  Edit3, 
+  PlusCircle, 
+  Award, 
   ArrowLeft,
-  Sparkles
+  RotateCcw,
+  TrendingUp
 } from "lucide-react";
 
 interface StudentDetailViewProps {
@@ -101,6 +98,20 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
     onUpdateStudent({ ...student, checklist: updatedList });
   };
 
+  const handleApplyDefaultChecklist = () => {
+    if (checklist.length > 0 && !confirm("Mevcut checklist sıfırlanıp 14 maddelik standart şablon yüklenecektir. Devam edilsin mi?")) {
+      return;
+    }
+
+    const defaultItems = DEFAULT_CHECKLIST_ITEMS.map((title, idx) => ({
+      id: `chk-def-${idx}-${Date.now()}`,
+      title,
+      completed: false,
+    }));
+
+    onUpdateStudent({ ...student, checklist: defaultItems });
+  };
+
   const getStatusBadge = (status: UniversityApplication["status"]) => {
     switch (status) {
       case "kabul":
@@ -113,6 +124,21 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
         return { label: "Red", color: "bg-red-100 text-red-800 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800" };
       default:
         return { label: "Hazırlanıyor 📝", color: "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700" };
+    }
+  };
+
+  const getExamTypeColor = (type: string) => {
+    switch (type) {
+      case "IELTS":
+        return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900";
+      case "SAT":
+        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900";
+      case "AP":
+        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900";
+      case "TOEFL":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900";
+      default:
+        return "bg-zinc-50 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700";
     }
   };
 
@@ -195,7 +221,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                   <h3 className="font-extrabold text-sm sm:text-base text-zinc-900 dark:text-white">
                     1. Başvurduğu Üniversiteler
                   </h3>
-                  <span className="text-[11px] text-zinc-400">({applications.length} başvuru/hedef)</span>
+                  <span className="text-[11px] text-zinc-400">({applications.length} başvuru)</span>
                 </div>
               </div>
 
@@ -277,12 +303,6 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                           </span>
                         )}
                       </div>
-
-                      {app.notes && (
-                        <div className="mt-2 rounded-lg bg-white p-1.5 text-[11px] text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
-                          {app.notes}
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -292,7 +312,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
         </div>
 
         {/* ========================================================= */}
-        {/* 2. GİRECEĞİ SINAVLAR */}
+        {/* 2. GİRECEĞİ SINAVLAR (Tarih ve Yer kaldırılmış sade görünüm) */}
         {/* ========================================================= */}
         <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col justify-between">
           <div>
@@ -325,16 +345,100 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                 Bu öğrenciye tanımlı sınav bulunmuyor.
               </div>
             ) : (
-              <div className="space-y-3.5">
+              <div className="space-y-3">
                 {studentExams.map((exam) => (
-                  <ExamCard
+                  <div
                     key={exam.id}
-                    exam={exam}
-                    session={session}
-                    onEdit={onEditExam}
-                    onDelete={onDeleteExam}
-                    onAddMock={onAddMock}
-                  />
+                    className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 text-xs transition hover:shadow-xs dark:border-zinc-800 dark:bg-zinc-800/50 space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-sm text-zinc-900 dark:text-white">
+                          {exam.title}
+                          {exam.subType && (
+                            <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400 ml-1">
+                              ({exam.subType})
+                            </span>
+                          )}
+                        </h4>
+                      </div>
+
+                      <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getExamTypeColor(exam.type)}`}>
+                        {exam.type}
+                      </span>
+                    </div>
+
+                    {exam.targetScore && (
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                        <Target className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                        <span>Hedef Puan: <strong className="text-zinc-900 dark:text-zinc-100">{exam.targetScore}</strong></span>
+                      </div>
+                    )}
+
+                    {/* Deneme Sınavları */}
+                    {exam.mockScores && exam.mockScores.length > 0 && (
+                      <div className="rounded-xl bg-white p-2.5 border border-zinc-200/80 dark:bg-zinc-900/60 dark:border-zinc-700/60">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">
+                          <span className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3 text-blue-600" />
+                            Deneme Skorları ({exam.mockScores.length})
+                          </span>
+                          <span className="text-blue-600 font-bold">
+                            Son: {exam.mockScores[exam.mockScores.length - 1].score}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {exam.mockScores.map((mock, idx) => (
+                            <span
+                              key={mock.id || idx}
+                              className="inline-flex items-center gap-1 rounded-md bg-zinc-50 px-1.5 py-0.5 text-[10px] font-medium text-zinc-700 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
+                            >
+                              <Award className="h-2.5 w-2.5 text-amber-500" />
+                              {mock.score}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Admin Actions */}
+                    {isTeacher && (
+                      <div className="flex items-center justify-end gap-1 pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
+                        {onAddMock && (
+                          <button
+                            onClick={() => onAddMock(exam.id)}
+                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                            title="Deneme Notu Ekle"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            <span>Deneme Ekle</span>
+                          </button>
+                        )}
+                        {onEditExam && (
+                          <button
+                            onClick={() => onEditExam(exam)}
+                            className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-200/60 hover:text-indigo-600 dark:hover:bg-zinc-700"
+                            title="Düzenle"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {onDeleteExam && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`"${exam.title}" sınav kaydını silmek istediğinize emin misiniz?`)) {
+                                onDeleteExam(exam.id);
+                              }
+                            }}
+                            className="rounded-lg p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+                            title="Sil"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -342,7 +446,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
         </div>
 
         {/* ========================================================= */}
-        {/* 3. CHECKLIST (KONTROL LİSTESİ) */}
+        {/* 3. CHECKLIST (KONTROL LİSTESİ - Standart Şablon Desteği) */}
         {/* ========================================================= */}
         <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col justify-between">
           <div>
@@ -360,6 +464,18 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                   </span>
                 </div>
               </div>
+
+              {isTeacher && (
+                <button
+                  type="button"
+                  onClick={handleApplyDefaultChecklist}
+                  className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300"
+                  title="14 Maddelik Standart Checklist Şablonunu Yükle"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span>Şablonu Yükle</span>
+                </button>
+              )}
             </div>
 
             {/* Progress Bar */}
@@ -375,16 +491,16 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
             )}
 
             {/* Checklist Items */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
               {checklist.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-zinc-200 p-6 text-center text-xs text-zinc-400 dark:border-zinc-800">
-                  Henüz checklist maddesi eklenmedi.
+                  Henüz checklist maddesi eklenmedi. Üstteki "Şablonu Yükle" butonunu kullanabilirsiniz.
                 </div>
               ) : (
                 checklist.map((item) => (
                   <div
                     key={item.id}
-                    className={`flex items-start justify-between gap-2 rounded-2xl border p-3 transition ${
+                    className={`flex items-start justify-between gap-2 rounded-xl border p-2.5 transition ${
                       item.completed
                         ? "border-emerald-200 bg-emerald-50/50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
                         : "border-zinc-200/80 bg-zinc-50/70 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-200"
@@ -393,7 +509,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleToggleChecklist(item.id)}
-                      className="flex items-start gap-2.5 text-left text-xs font-medium flex-1 pt-0.5"
+                      className="flex items-start gap-2 text-left text-xs font-medium flex-1 pt-0.5"
                     >
                       {item.completed ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -406,7 +522,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                         </span>
                         {item.dueDate && (
                           <div className="text-[10px] text-zinc-400 mt-0.5">
-                            📅 Hedef: {item.dueDate}
+                            📅 {item.dueDate}
                           </div>
                         )}
                       </div>
@@ -418,7 +534,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                       className="text-zinc-400 hover:text-red-500 p-1 shrink-0"
                       title="Maddeyi Sil"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 ))

@@ -57,6 +57,23 @@ export interface ChecklistItem {
   category?: string;
 }
 
+export const DEFAULT_CHECKLIST_ITEMS: string[] = [
+  "Passport (Pasaport)",
+  "Diploma",
+  "Transcript (Transkript)",
+  "English Proficiency (IELTS / TOEFL / Duolingo)",
+  "SAT",
+  "AP",
+  "Motivation Letter / Personal Statement",
+  "Recommendation Letter (Referans Mektubu)",
+  "CV / Resume",
+  "Admission Test (Giriş Sınavı)",
+  "Essays (Ek Kompozisyonlar)",
+  "Extra Curricular (Ders Dışı Aktiviteler)",
+  "Awards (Ödüller & Başarılar)",
+  "Financial Documents (Maddi / Banka Belgeleri)",
+];
+
 export interface Student {
   id: string;
   name: string;

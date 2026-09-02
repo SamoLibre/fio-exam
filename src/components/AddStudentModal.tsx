@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, { useState } from "react";
-import { Student } from "@/types";
+import { DEFAULT_CHECKLIST_ITEMS, Student } from "@/types";
 import { X, UserPlus, GraduationCap, Phone, Lock, User } from "lucide-react";
 
 interface AddStudentModalProps {
@@ -42,6 +42,12 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       return;
     }
 
+    const defaultChecklist = DEFAULT_CHECKLIST_ITEMS.map((title, idx) => ({
+      id: `chk-init-${idx}-${Date.now()}`,
+      title,
+      completed: false,
+    }));
+
     const newStudent: Student = {
       id: `student-${Date.now()}`,
       name: name.trim(),
@@ -51,6 +57,8 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       targetMajor: targetMajor.trim(),
       phone: phone.trim(),
       notes: notes.trim(),
+      applications: [],
+      checklist: defaultChecklist,
       avatarColor,
       createdAt: new Date().toISOString(),
     };
@@ -68,7 +76,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-xs">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+      <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl transition-all dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
@@ -80,7 +88,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                 Yeni Öğrenci Ekle
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Giriş yapabilmesi için kullanıcı adı ve şifre belirleyin.
+                Öğrenciye otomatik standart checklist atanacaktır.
               </p>
             </div>
           </div>
@@ -179,19 +187,6 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+90 555 000 00 00"
-              className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-              Genel Notlar
-            </label>
-            <textarea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Öğrencinin seviyesi, çalışma planı..."
               className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
             />
           </div>
