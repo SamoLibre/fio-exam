@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -38,28 +38,26 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    const cleanUsername = username.trim().toLowerCase();
     const localData = getLocalData();
 
     // Teacher check
     if (roleTab === "teacher") {
       if (
-        (username.toLowerCase() === "ogretmen" ||
-          username.toLowerCase() === "admin" ||
-          username.toLowerCase() === "hoca" ||
-          username.toLowerCase() === "ogretmen1") &&
-        (password === "123456" || password === "123" || password === "admin" || password === "")
+        (cleanUsername === "elif" || cleanUsername === "ogretmen" || cleanUsername === "admin") &&
+        (password === "elif2026" || password === "elif123" || password === "123456")
       ) {
         const session: UserSession = {
-          id: "admin-1",
-          name: "Öğretmen (Admin)",
-          username: "ogretmen",
+          id: "admin-elif",
+          name: "Elif Öğretmen",
+          username: "elif",
           role: "admin",
         };
         saveSession(session);
         router.push("/dashboard");
         return;
       } else {
-        setError("Öğretmen kullanıcı adı veya şifre hatalı. (Örnek: ogretmen / 123456)");
+        setError("Öğretmen kullanıcı adı veya şifre hatalı.");
         setLoading(false);
         return;
       }
@@ -67,11 +65,11 @@ export default function LoginPage() {
 
     // Student check
     const student = localData.students.find(
-      (s) => s.username.toLowerCase() === username.trim().toLowerCase()
+      (s) => s.username.toLowerCase() === cleanUsername
     );
 
     if (student) {
-      if (!student.password || student.password === password || password === "123" || password === "123456" || password === "") {
+      if (!student.password || student.password === password) {
         const session: UserSession = {
           id: student.id,
           name: student.name,
@@ -85,40 +83,8 @@ export default function LoginPage() {
       }
     }
 
-    setError("Öğrenci bulunamadı veya şifre yanlış. (Örn: mira, bedirhan, burak / 123)");
+    setError("Kullanıcı adı veya şifre hatalı. Lütfen öğretmeninizden bilgilerinizi kontrol etmesini isteyiniz.");
     setLoading(false);
-  };
-
-  const handleQuickLogin = (uname: string, pwd: string, role: "teacher" | "student") => {
-    setRoleTab(role);
-    setUsername(uname);
-    setPassword(pwd);
-    
-    // Immediate direct login for demo
-    const localData = getLocalData();
-    if (role === "teacher") {
-      const session: UserSession = {
-        id: "admin-1",
-        name: "Öğretmen (Admin)",
-        username: uname,
-        role: "admin",
-      };
-      saveSession(session);
-      router.push("/dashboard");
-    } else {
-      const student = localData.students.find((s) => s.username.toLowerCase() === uname.toLowerCase());
-      if (student) {
-        const session: UserSession = {
-          id: student.id,
-          name: student.name,
-          username: student.username,
-          role: "student",
-          studentId: student.id,
-        };
-        saveSession(session);
-        router.push("/student-portal");
-      }
-    }
   };
 
   return (
@@ -134,7 +100,7 @@ export default function LoginPage() {
             FIO Exam
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
-            IELTS • SAT • AP • TOEFL Sınav ve Alarm Sistemi
+            Sınav Takip, Üniversite Başvuru & Alarm Sistemi
           </p>
         </div>
 
@@ -145,8 +111,8 @@ export default function LoginPage() {
               onClick={() => {
                 setRoleTab("teacher");
                 setError("");
-                setUsername("ogretmen");
-                setPassword("123456");
+                setUsername("");
+                setPassword("");
               }}
               className={"flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-bold transition " + (
                 roleTab === "teacher"
@@ -163,8 +129,8 @@ export default function LoginPage() {
               onClick={() => {
                 setRoleTab("student");
                 setError("");
-                setUsername("mira");
-                setPassword("123");
+                setUsername("");
+                setPassword("");
               }}
               className={"flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-bold transition " + (
                 roleTab === "student"
@@ -193,7 +159,7 @@ export default function LoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder={roleTab === "teacher" ? "ogretmen" : "mira, bedirhan, burak..."}
+                  placeholder={roleTab === "teacher" ? "elif" : "Kullanıcı adınız"}
                   className="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   required
                 />
@@ -209,8 +175,9 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••"
+                  placeholder="••••••••"
                   className="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  required
                 />
               </div>
             </div>
@@ -224,49 +191,6 @@ export default function LoginPage() {
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
-
-          <div className="mt-6 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            <div className="text-center text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2.5">
-              ⚡ Tek Tıkla Hızlı Test Girişleri
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("ogretmen", "123456", "teacher")}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/60 p-2 text-xs font-bold text-blue-700 transition hover:bg-blue-100 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300"
-              >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Öğretmen (Admin)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("mira", "123", "student")}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-pink-200 bg-pink-50/60 p-2 text-xs font-bold text-pink-700 transition hover:bg-pink-100 dark:border-pink-900/50 dark:bg-pink-950/40 dark:text-pink-300"
-              >
-                <User className="h-3.5 w-3.5" />
-                <span>Mira (IELTS)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("bedirhan", "123", "student")}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/60 p-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-300"
-              >
-                <User className="h-3.5 w-3.5" />
-                <span>Bedirhan (SAT)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin("burak", "123", "student")}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/60 p-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
-              >
-                <User className="h-3.5 w-3.5" />
-                <span>Burak (TOEFL)</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
@@ -277,12 +201,12 @@ export default function LoginPage() {
           <span>•</span>
           <span className="flex items-center gap-1">
             <BellRing className="h-3.5 w-3.5 text-amber-500" />
-            Otomatik Sınav Alarmları
+            Sınav Alarmları
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
             <BookOpen className="h-3.5 w-3.5 text-emerald-600" />
-            Deneme Takibi
+            Üniversite & Checklist
           </span>
         </div>
       </div>

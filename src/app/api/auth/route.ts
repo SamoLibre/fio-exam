@@ -4,17 +4,18 @@ import { initialData } from "@/lib/initialData";
 export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
+    const cleanUsername = (username || "").toLowerCase().trim();
 
-    // Teacher / Admin credentials
+    // Teacher account: Elif
     if (
-      (username === "ogretmen" || username === "admin" || username === "hoca") &&
-      (password === "123456" || password === "123" || password === "admin")
+      (cleanUsername === "elif" || cleanUsername === "ogretmen" || cleanUsername === "admin") &&
+      (password === "elif2026" || password === "elif123" || password === "123456")
     ) {
       return NextResponse.json({
         user: {
-          id: "admin-1",
-          name: "Öğretmen / Admin",
-          username: username,
+          id: "admin-elif",
+          name: "Elif Öğretmen",
+          username: "elif",
           role: "admin",
         },
       });
@@ -22,12 +23,11 @@ export async function POST(req: Request) {
 
     // Student credentials
     const student = initialData.students.find(
-      (s) => s.username.toLowerCase() === username.toLowerCase().trim()
+      (s) => s.username.toLowerCase() === cleanUsername
     );
 
     if (student) {
-      // Allow password "123" or whatever is set
-      if (!student.password || student.password === password || password === "123" || password === "123456") {
+      if (!student.password || student.password === password) {
         return NextResponse.json({
           user: {
             id: student.id,
