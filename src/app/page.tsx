@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getLocalData, getSession, saveLocalData, saveSession } from "@/lib/storage";
-import { AppData, Student, UserSession } from "@/types";
+import { getSession, saveLocalData, saveSession } from "@/lib/storage";
+import { AppData, UserSession } from "@/types";
 import { 
   GraduationCap, 
   ShieldCheck, 
@@ -16,7 +16,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [roleTab, setRoleTab] = useState<"teacher" | "student">("student");
+  const [roleTab, setRoleTab] = useState<"student" | "teacher">("student");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,15 +36,11 @@ export default function LoginPage() {
     }
 
     // Sync latest data from server
-    fetch("/api/data")
+    fetch("/api/data", { cache: "no-store" })
       .then((res) => res.json())
       .then((serverData: AppData) => {
         if (serverData && Array.isArray(serverData.students)) {
-          const local = getLocalData();
-          // If server has students, merge with local
-          if (serverData.students.length > 0 || (local.students.length === 0 && serverData.students.length > 0)) {
-            saveLocalData(serverData);
-          }
+          saveLocalData(serverData);
         }
       })
       .catch(() => {});
@@ -58,75 +54,41 @@ export default function LoginPage() {
     const cleanUsername = username.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    // 1. Check if Teacher Login (Elif)
-    if (
-      (cleanUsername === "elif" || cleanUsername === "ogretmen" || cleanUsername === "admin") &&
-      (cleanPassword === "elif2026" || cleanPassword === "elif123" || cleanPassword === "123456")
-    ) {
-      const session: UserSession = {
-        id: "admin-elif",
-        name: "Elif Öğretmen",
-        username: "elif",
-        role: "admin",
-      };
-      saveSession(session);
-      router.push("/dashboard");
-      return;
-    }
-
-    // 2. Refresh data from server to catch students created on other devices
-    let localData = getLocalData();
     try {
-      const res = await fetch("/api/data");
-      if (res.ok) {
-        const serverData: AppData = await res.json();
-        if (serverData && Array.isArray(serverData.students)) {
-          // Merge server students with local students
-          const studentMap = new Map<string, Student>();
-          serverData.students.forEach((s) => studentMap.set(s.username.toLowerCase(), s));
-          localData.students.forEach((s) => studentMap.set(s.username.toLowerCase(), s));
-          
-          localData = {
-            ...localData,
-            students: Array.from(studentMap.values()),
-            exams: serverData.exams && serverData.exams.length > 0 ? serverData.exams : localData.exams,
-          };
-          saveLocalData(localData);
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: cleanUsername, password: cleanPassword }),
+      });
+
+      const json = await res.json();
+
+      if (res.ok && json.user) {
+        saveSession(json.user);
+        
+        // Also fetch full fresh data before routing
+        try {
+          const dataRes = await fetch("/api/data", { cache: "no-store" });
+          if (dataRes.ok) {
+            const fullData = await dataRes.json();
+            saveLocalData(fullData);
+          }
+        } catch {}
+
+        if (json.user.role === "admin") {
+          router.push("/dashboard");
+        } else {
+          router.push("/student-portal");
         }
-      }
-    } catch {}
-
-    // 3. Check Student Login
-    const student = localData.students.find(
-      (s) => s.username.toLowerCase() === cleanUsername
-    );
-
-    if (student) {
-      if (!student.password || student.password === cleanPassword) {
-        const session: UserSession = {
-          id: student.id,
-          name: student.name,
-          username: student.username,
-          role: "student",
-          studentId: student.id,
-        };
-        saveSession(session);
-        router.push("/student-portal");
         return;
       } else {
-        setError(`"${student.name}" için girilen şifre yanlış.`);
-        setLoading(false);
-        return;
+        setError(json.error || "Kullanıcı adı veya şifre hatalı.");
       }
+    } catch {
+      setError("Giriş yapılırken bağlantı hatası oluştu. Lütfen tekrar deneyiniz.");
+    } finally {
+      setLoading(false);
     }
-
-    // Not found
-    if (roleTab === "teacher" || cleanUsername === "elif") {
-      setError("Öğretmen kullanıcı adı veya şifre hatalı. (Öğretmen: elif / elif2026)");
-    } else {
-      setError(`"${username}" kullanıcı adlı öğrenci bulunamadı. Lütfen öğretmeninizin sizi sisteme eklediğinden ve kullanıcı adınızı doğru yazdığınızdan emin olun.`);
-    }
-    setLoading(false);
   };
 
   return (
@@ -190,14 +152,14 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                {roleTab === "teacher" ? "Öğretmen Kullanıcı Adı" : "Öğrenci Kullanıcı Adı"}
+                Kullanıcı Adı
               </label>
               <div className="relative mt-1">
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder={roleTab === "teacher" ? "elif" : "Örn: melike"}
+                  placeholder="Kullanıcı Adı"
                   className="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   required
                 />
@@ -213,7 +175,7 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Şifre"
                   className="w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   required
                 />

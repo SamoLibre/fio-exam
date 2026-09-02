@@ -30,7 +30,6 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   const [targetUniversity, setTargetUniversity] = useState("");
   const [targetMajor, setTargetMajor] = useState("");
   const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
 
   if (!isOpen) return null;
@@ -56,7 +55,6 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       targetUniversity: targetUniversity.trim(),
       targetMajor: targetMajor.trim(),
       phone: phone.trim(),
-      notes: notes.trim(),
       applications: [],
       checklist: defaultChecklist,
       avatarColor,
@@ -70,7 +68,6 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
     setTargetUniversity("");
     setTargetMajor("");
     setPhone("");
-    setNotes("");
     onClose();
   };
 
@@ -88,7 +85,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                 Yeni Öğrenci Ekle
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Öğrenciye otomatik standart checklist atanacaktır.
+                Giriş yapabilmesi için kullanıcı adı ve şifre belirleyin.
               </p>
             </div>
           </div>
@@ -115,7 +112,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                   setUsername(e.target.value.toLowerCase().split(" ")[0]);
                 }
               }}
-              placeholder="Örn: Mira Yılmaz"
+              placeholder="Ad Soyad"
               className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               required
             />
@@ -131,7 +128,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="mira"
+                  placeholder="Kullanıcı Adı"
                   className="w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   required
                 />
@@ -145,7 +142,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                 type="text"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="123"
+                placeholder="Şifre (Varsayılan: 123)"
                 className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               />
             </div>
@@ -160,7 +157,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                 type="text"
                 value={targetUniversity}
                 onChange={(e) => setTargetUniversity(e.target.value)}
-                placeholder="Örn: Oxford / TU Munich"
+                placeholder="Hedef Üniversite"
                 className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               />
             </div>
@@ -172,7 +169,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
                 type="text"
                 value={targetMajor}
                 onChange={(e) => setTargetMajor(e.target.value)}
-                placeholder="Örn: Bilgisayar Müh."
+                placeholder="Hedef Bölüm"
                 className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
               />
             </div>
@@ -186,7 +183,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+90 555 000 00 00"
+              placeholder="Telefon Numarası"
               className="mt-1 w-full rounded-xl border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
             />
           </div>

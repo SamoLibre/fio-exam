@@ -52,19 +52,36 @@ export default function StudentPortalPage() {
     setData(localData);
 
     const studentObj = localData.students.find(
-      (s) => s.id === currentSession.studentId || s.username === currentSession.username
+      (s) => s.id === currentSession.studentId || s.username.toLowerCase() === currentSession.username.toLowerCase()
     );
     if (studentObj) {
       setCurrentStudent(studentObj);
     }
 
-    // Check alarms
-    checkAndSendExamAlarms(localData.exams);
+    // Fetch latest cloud data
+    fetch("/api/data", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((cloudData: AppData) => {
+        if (cloudData && Array.isArray(cloudData.students)) {
+          setData(cloudData);
+          saveLocalData(cloudData);
+          const updatedStudent = cloudData.students.find(
+            (s) => s.id === currentSession.studentId || s.username.toLowerCase() === currentSession.username.toLowerCase()
+          );
+          if (updatedStudent) {
+            setCurrentStudent(updatedStudent);
+          }
+          checkAndSendExamAlarms(cloudData.exams || []);
+        }
+      })
+      .catch(() => {});
+
+    checkAndSendExamAlarms(localData.exams || []);
   }, [router]);
 
   // Find student exams
   const studentExams = data?.exams.filter(
-    (e) => e.studentId === currentStudent?.id || e.studentName.toLowerCase().includes(session?.name.toLowerCase() || "")
+    (e) => e.studentId === currentStudent?.id || (session?.username && e.studentName.toLowerCase().includes(session.username.toLowerCase()))
   ) || [];
 
   const sortedExams = [...studentExams].sort(

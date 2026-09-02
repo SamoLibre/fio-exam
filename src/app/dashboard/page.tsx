@@ -51,8 +51,22 @@ export default function TeacherDashboardPage() {
       setSelectedStudentId(localData.students[0].id);
     }
 
-    // Run alarm checker
-    checkAndSendExamAlarms(localData.exams);
+    // Sync latest data from persistent cloud DB
+    fetch("/api/data", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((cloudData: AppData) => {
+        if (cloudData && Array.isArray(cloudData.students)) {
+          setData(cloudData);
+          saveLocalData(cloudData);
+          if (cloudData.students.length > 0) {
+            setSelectedStudentId((prev) => prev || cloudData.students[0].id);
+          }
+          checkAndSendExamAlarms(cloudData.exams || []);
+        }
+      })
+      .catch(() => {});
+
+    checkAndSendExamAlarms(localData.exams || []);
   }, [router]);
 
   const handleLogout = () => {
