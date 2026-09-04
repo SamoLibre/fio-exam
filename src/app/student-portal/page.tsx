@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -264,6 +264,7 @@ export default function StudentPortalPage() {
         {activeTab === "calendar" && (
           <CalendarView
             exams={studentExams}
+            students={currentStudent ? [currentStudent] : []}
             isStudentPortal={true}
           />
         )}

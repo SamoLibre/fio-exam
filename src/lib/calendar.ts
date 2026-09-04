@@ -1,4 +1,4 @@
-﻿import { Exam } from "@/types";
+﻿import { Exam, UniversityApplication } from "@/types";
 
 export function createGoogleCalendarUrl(exam: Exam): string {
   const [year, month, day] = exam.examDate.split("-");
@@ -46,19 +46,16 @@ export function downloadIcsFile(exam: Exam): void {
     `DESCRIPTION:Öğrenci: ${exam.studentName}\\nSınav: ${exam.title}\\nHedef Puan: ${exam.targetScore || "-"}\\nNotlar: ${exam.notes || "-"}`,
     `LOCATION:${exam.location || "Sınav Merkezi"}`,
     "STATUS:CONFIRMED",
-    // 1 Day before Alarm
     "BEGIN:VALARM",
     "TRIGGER:-P1D",
     "ACTION:DISPLAY",
     `DESCRIPTION:Yarın Sınavın Var! ${exam.title}`,
     "END:VALARM",
-    // 3 Days before Alarm
     "BEGIN:VALARM",
     "TRIGGER:-P3D",
     "ACTION:DISPLAY",
     `DESCRIPTION:3 Gün Kaldı: ${exam.title}`,
     "END:VALARM",
-    // 1 Week before Alarm
     "BEGIN:VALARM",
     "TRIGGER:-P7D",
     "ACTION:DISPLAY",
@@ -73,6 +70,68 @@ export function downloadIcsFile(exam: Exam): void {
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${exam.studentName.replace(/\s+/g, "_")}_${exam.type}_Sinav.ics`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export function createUniGoogleCalendarUrl(app: UniversityApplication, studentName: string): string {
+  if (!app.deadline) return "";
+  const [year, month, day] = app.deadline.split("-");
+  const startIso = `${year}${month}${day}T090000`;
+  const endIso = `${year}${month}${day}T120000`;
+
+  const title = encodeURIComponent(`🏛️ ${app.universityName} Başvuru Deadline - ${studentName}`);
+  const details = encodeURIComponent(
+    `Öğrenci: ${studentName}\nÜniversite: ${app.universityName}\nProgram: ${app.program || "-"}\nÜlke: ${app.country || "-"}\nDurum: ${app.status}`
+  );
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${details}`;
+}
+
+export function downloadUniIcsFile(app: UniversityApplication, studentName: string): void {
+  if (!app.deadline) return;
+  const [year, month, day] = app.deadline.split("-");
+  const startIso = `${year}${month}${day}T090000`;
+  const endIso = `${year}${month}${day}T120000`;
+
+  const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const uid = `uni-deadline-${app.id}-${Date.now()}@fio-exam.app`;
+
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//FIO Exam//TR",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${startIso}`,
+    `DTEND:${endIso}`,
+    `SUMMARY:🏛️ ${app.universityName} Başvuru Deadline - ${studentName}`,
+    `DESCRIPTION:Öğrenci: ${studentName}\\nÜniversite: ${app.universityName}\\nProgram: ${app.program || "-"}\\nÜlke: ${app.country || "-"}\\nDurum: ${app.status}`,
+    "STATUS:CONFIRMED",
+    "BEGIN:VALARM",
+    "TRIGGER:-P7D",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:1 Hafta Kaldı: ${app.universityName} Başvuru Deadline`,
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:-P1D",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:Yarın Son Gün: ${app.universityName} Başvuru Deadline`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${studentName.replace(/\s+/g, "_")}_${app.universityName.replace(/\s+/g, "_")}_Deadline.ics`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
