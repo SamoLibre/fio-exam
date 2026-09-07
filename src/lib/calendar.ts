@@ -1,4 +1,4 @@
-﻿import { Exam, UniversityApplication } from "@/types";
+﻿import { Exam, UniversityApplication, ChecklistItem } from "@/types";
 
 export function createGoogleCalendarUrl(exam: Exam): string {
   const [year, month, day] = exam.examDate.split("-");
@@ -132,6 +132,68 @@ export function downloadUniIcsFile(app: UniversityApplication, studentName: stri
   const link = document.createElement("a");
   link.href = url;
   link.setAttribute("download", `${studentName.replace(/\s+/g, "_")}_${app.universityName.replace(/\s+/g, "_")}_Deadline.ics`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export function createChecklistGoogleCalendarUrl(item: ChecklistItem, studentName: string): string {
+  if (!item.dueDate) return "";
+  const [year, month, day] = item.dueDate.split("-");
+  const startIso = `${year}${month}${day}T090000`;
+  const endIso = `${year}${month}${day}T100000`;
+
+  const title = encodeURIComponent(`✅ ${item.title} - ${studentName}`);
+  const details = encodeURIComponent(
+    `Öğrenci: ${studentName}\nGörev / Belge: ${item.title}\nDurum: ${item.completed ? "Tamamlandı" : "Beklemede"}`
+  );
+
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startIso}/${endIso}&details=${details}`;
+}
+
+export function downloadChecklistIcsFile(item: ChecklistItem, studentName: string): void {
+  if (!item.dueDate) return;
+  const [year, month, day] = item.dueDate.split("-");
+  const startIso = `${year}${month}${day}T090000`;
+  const endIso = `${year}${month}${day}T100000`;
+
+  const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const uid = `chk-${item.id}-${Date.now()}@fio-exam.app`;
+
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//FIO Exam//TR",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${now}`,
+    `DTSTART:${startIso}`,
+    `DTEND:${endIso}`,
+    `SUMMARY:✅ ${item.title} - ${studentName}`,
+    `DESCRIPTION:Öğrenci: ${studentName}\\nGörev: ${item.title}\\nDurum: ${item.completed ? "Tamamlandı" : "Beklemede"}`,
+    "STATUS:CONFIRMED",
+    "BEGIN:VALARM",
+    "TRIGGER:-P1D",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:Yarın Son Gün: ${item.title}`,
+    "END:VALARM",
+    "BEGIN:VALARM",
+    "TRIGGER:-P3D",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:3 Gün Kaldı: ${item.title}`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${studentName.replace(/\s+/g, "_")}_${item.title.replace(/[^a-zA-Z0-9]/g, "_")}.ics`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { ChecklistItem, DEFAULT_CHECKLIST_ITEMS, Exam, Student, UniversityApplication, UserSession } from "@/types";
@@ -97,6 +97,13 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
 
   const handleDeleteChecklistItem = (itemId: string) => {
     const updatedList = checklist.filter((item) => item.id !== itemId);
+    onUpdateStudent({ ...student, checklist: updatedList });
+  };
+
+  const handleUpdateChecklistDate = (itemId: string, dueDate: string) => {
+    const updatedList = checklist.map((item) =>
+      item.id === itemId ? { ...item, dueDate: dueDate || undefined } : item
+    );
     onUpdateStudent({ ...student, checklist: updatedList });
   };
 
@@ -510,7 +517,7 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                 checklist.map((item) => (
                   <div
                     key={item.id}
-                    className={`flex items-start justify-between gap-2 rounded-xl border p-2.5 transition ${
+                    className={`flex items-center justify-between gap-2 rounded-xl border p-2.5 transition ${
                       item.completed
                         ? "border-emerald-200 bg-emerald-50/50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
                         : "border-zinc-200/80 bg-zinc-50/70 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-200"
@@ -519,33 +526,51 @@ export const StudentDetailView: React.FC<StudentDetailViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleToggleChecklist(item.id)}
-                      className="flex items-start gap-2 text-left text-xs font-medium flex-1 pt-0.5"
+                      className="flex items-center gap-2 text-left text-xs font-medium flex-1 min-w-0"
                     >
                       {item.completed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                       ) : (
-                        <Circle className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
+                        <Circle className="h-4 w-4 text-zinc-400 shrink-0" />
                       )}
-                      <div>
-                        <span className={item.completed ? "line-through opacity-70" : ""}>
-                          {item.title}
-                        </span>
-                        {item.dueDate && (
-                          <div className="text-[10px] text-zinc-400 mt-0.5">
-                            📅 {item.dueDate}
-                          </div>
-                        )}
-                      </div>
+                      <span className={`truncate ${item.completed ? "line-through opacity-70" : ""}`}>
+                        {item.title}
+                      </span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteChecklistItem(item.id)}
-                      className="text-zinc-400 hover:text-red-500 p-1 shrink-0"
-                      title="Maddeyi Sil"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <div 
+                        className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-1.5 py-0.5 dark:border-zinc-700 dark:bg-zinc-800"
+                        title="Hedef / Teslim Tarihi (Takvimde Görünür)"
+                      >
+                        <Calendar className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <input
+                          type="date"
+                          value={item.dueDate || ""}
+                          onChange={(e) => handleUpdateChecklistDate(item.id, e.target.value)}
+                          className="bg-transparent text-[11px] text-zinc-700 focus:outline-none dark:text-zinc-200 cursor-pointer"
+                        />
+                        {item.dueDate && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateChecklistDate(item.id, "")}
+                            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-[10px] px-0.5"
+                            title="Tarihi Kaldır"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteChecklistItem(item.id)}
+                        className="text-zinc-400 hover:text-red-500 p-1"
+                        title="Maddeyi Sil"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

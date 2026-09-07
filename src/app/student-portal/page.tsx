@@ -265,6 +265,7 @@ export default function StudentPortalPage() {
           <CalendarView
             exams={studentExams}
             students={currentStudent ? [currentStudent] : []}
+            onUpdateStudent={handleUpdateStudent}
             isStudentPortal={true}
           />
         )}
